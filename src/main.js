@@ -888,7 +888,7 @@ const bootLines = () => {
     ``,
     `<span class="t-dim">Last login: ${esc(now)} from 127.0.0.1</span>`,
     ``,
-    `<span class="t-ok">无人扶我青云志，我自踏雪至山巅。</span>`,
+    `Welcome to <span class="t-ok">${esc(TERM.host)}</span> (Ubuntu 24.04 LTS, kernel 6.8.0-45-generic)`,
     ``,
     ` * Blog:    ${esc(site.name)} 的网络安全博客`,
     ` * Posts:   ${site.articles.length} 篇文章 · ${site.projects.length} 个项目`,
