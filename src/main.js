@@ -890,6 +890,7 @@ const bootLines = () => {
     ``,
     `Welcome to <span class="t-ok">${esc(TERM.host)}</span> (Ubuntu 24.04 LTS, kernel 6.8.0-45-generic)`,
     ``,
+    ` * Motto:   <span class="t-ok">无人扶我青云志，我自踏雪至山巅</span>`,
     ` * Blog:    ${esc(site.name)} 的网络安全博客`,
     ` * Posts:   ${site.articles.length} 篇文章 · ${site.projects.length} 个项目`,
     ` * Focus:   ${esc((site.interests || []).join(' / '))}`,
