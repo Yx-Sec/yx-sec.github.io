@@ -300,7 +300,7 @@ const closeLightbox = () => {
 
 let projectLastFocus = null;
 const renderProjectSection = (section) => `
-  <article class="project-dialog-section project-dialog-section-${escapeHtml(section.kind || 'plain')}">
+  <article class="project-dialog-section project-dialog-section-${escapeHtml(section.kind || 'plain')}${section.image ? ' has-image' : ''}">
     ${section.image ? `<button class="project-detail-image-button" type="button" aria-label="放大查看${escapeHtml(section.title || '配图')}"><img class="project-detail-image" src="${escapeHtml(asset(section.image))}" alt="${escapeHtml(`${section.title || ''}${section.subtitle ? `：${section.subtitle}` : ''}`)}"><span>点击图片放大</span></button>` : ''}
     <div class="project-dialog-section-copy">
       ${section.eyebrow ? `<span class="project-section-eyebrow">${escapeHtml(section.eyebrow)}</span>` : ''}
@@ -309,13 +309,16 @@ const renderProjectSection = (section) => `
       <p>${escapeHtml(section.text || '')}</p>
     </div>
   </article>`;
-const openProjectDialog = (project, trigger) => {
+const openProjectDialog = (project, section, trigger) => {
   const dialog = document.querySelector('.project-dialog');
-  if (!dialog || !project) return;
+  if (!dialog || !project || !section) return;
   projectLastFocus = trigger || document.activeElement;
-  dialog.querySelector('#project-dialog-title').textContent = project.name || '';
-  dialog.querySelector('.project-dialog-summary').textContent = project.description || '';
-  dialog.querySelector('.project-dialog-content').innerHTML = (project.sections || []).map(renderProjectSection).join('');
+  dialog.querySelector('.project-dialog-kicker').textContent = `${project.name || ''} / ${section.eyebrow || 'DETAIL'}`;
+  dialog.querySelector('#project-dialog-title').textContent = section.title || project.name || '';
+  dialog.querySelector('.project-dialog-summary').textContent = section.subtitle || project.description || '';
+  const content = dialog.querySelector('.project-dialog-content');
+  content.classList.add('is-single');
+  content.innerHTML = renderProjectSection(section);
   dialog.querySelector('.project-dialog-footer').innerHTML = project.url
     ? `<a class="project-dialog-link" href="${escapeHtml(safeUrl(project.url))}">${escapeHtml(project.linkLabel || '了解更多')} ${svg('arrow')}</a>`
     : '';
@@ -1259,21 +1262,27 @@ const pageProjects = () => `
     <div class="section-heading"><span class="section-number">PROJECTS / 正在进行</span><h2 id="projects-title">项目</h2></div>
     <div class="section-body">
       ${site.projects.length ? `<div class="project-grid ${site.projects.some(p => p.sections && p.sections.length) ? 'project-grid-featured' : ''}">
-        ${site.projects.map((p, index) => p.sections && p.sections.length ? `<article class="project-card project-showcase project-launch-card">
+        ${site.projects.map((p, index) => p.sections && p.sections.length ? `<article class="project-card project-showcase">
           <div class="project-card-top">
             <div class="project-icon">${svg(p.icon)}</div>
             ${p.year ? `<span class="project-year">${escapeHtml(p.year)}</span>` : ''}
           </div>
           <h3>${escapeHtml(p.name)}</h3>
           <p class="project-desc">${escapeHtml(p.description)}</p>
-          <button class="project-card-preview" type="button" data-project-index="${index}" aria-haspopup="dialog" aria-label="打开${escapeHtml(p.name)}详细内容">
-            ${p.sections.find(section => section.image)?.image ? `<img src="${escapeHtml(asset(p.sections.find(section => section.image).image))}" alt="${escapeHtml(p.sections.find(section => section.image).title || p.name)}" />` : ''}
-            <span class="project-preview-label">学习计划 · 持续更新</span>
-            <strong>${p.sections.map(section => escapeHtml(section.title || '')).filter(Boolean).join('　·　')}</strong>
-            <span class="project-preview-hint">点击查看完整内容 ${svg('arrow')}</span>
-          </button>
+          <div class="project-section-grid">
+            ${p.sections.map((section, sectionIndex) => `<section class="project-section-card project-section-${escapeHtml(section.kind || 'plain')}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="展开查看${escapeHtml(section.title || '详情')}" data-project-index="${index}" data-section-index="${sectionIndex}">
+              ${section.image ? `<img class="project-section-image" src="${escapeHtml(asset(section.image))}" alt="" aria-hidden="true">` : ''}
+              <div class="project-section-shade"></div>
+              <div class="project-section-content">
+                ${section.eyebrow ? `<span class="project-section-eyebrow">${escapeHtml(section.eyebrow)}</span>` : ''}
+                <h4>${escapeHtml(section.title || '')}</h4>
+                ${section.subtitle ? `<strong>${escapeHtml(section.subtitle)}</strong>` : ''}
+                <p>${escapeHtml(section.text || '')}</p>
+              </div>
+            </section>`).join('')}
+          </div>
           <div class="project-meta">${(p.tags || []).map(t => `<span>#${escapeHtml(t)}</span>`).join('')}</div>
-          <button class="project-open-button" type="button" data-project-index="${index}" aria-haspopup="dialog">展开查看 ${svg('arrow')}</button>
+          ${p.url ? link(p, `${escapeHtml(p.linkLabel || '了解更多')} ${svg('arrow')}`, 'text-link') : ''}
         </article>` : `<article class="project-card">
           <div class="project-card-top">
             <div class="project-icon">${svg(p.icon)}</div>
@@ -1540,8 +1549,16 @@ const bindGlobalUi = () => {
   document.querySelector('.lightbox').addEventListener('click', closeLightbox);
   // 项目卡片详情：宽屏/窄屏共用同一详情视图
   const projectDialog = document.querySelector('.project-dialog');
-  document.querySelectorAll('.project-open-button, .project-card-preview').forEach(button => {
-    button.addEventListener('click', () => openProjectDialog(site.projects[Number(button.dataset.projectIndex)], button));
+  document.querySelectorAll('.project-section-card[role="button"]').forEach(card => {
+    const open = () => {
+      const project = site.projects[Number(card.dataset.projectIndex)];
+      const section = project?.sections?.[Number(card.dataset.sectionIndex)];
+      openProjectDialog(project, section, card);
+    };
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+    });
   });
   projectDialog.querySelector('.project-dialog-close').addEventListener('click', closeProjectDialog);
   projectDialog.querySelector('.project-dialog-backdrop').addEventListener('click', closeProjectDialog);
