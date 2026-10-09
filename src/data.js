@@ -13,7 +13,7 @@ export const site = {
   bio: '2026 年正式入行，在抓包、测试与复盘中慢慢成长，陪你走过网络安全的入门长路。',
   portrait: '/assets/xiaoxiansec-avatar.jpg',
   focus: '',
-  contactEmail: '',
+  contactEmail: 'ys_sec@163.com',
   interests: [],
   about: [
     '2026 年，我正式走进网络安全这个行业。真正开始之后才发现，入门没有捷径，前面的路很长，也常常伴着迷茫和挫败。',
