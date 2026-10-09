@@ -293,8 +293,45 @@ const closeLightbox = () => {
   const lb = document.querySelector('.lightbox');
   if (!lb || !lightboxIsOpen()) return;
   lb.classList.remove('is-open');
-  // 阅读弹窗还开着时保持页面锁定
-  if (!document.querySelector('.reader')?.classList.contains('is-open')) document.body.style.overflow = '';
+  // 详情弹窗或文章阅读还开着时保持页面锁定
+  if (!document.querySelector('.reader')?.classList.contains('is-open')
+      && !document.querySelector('.project-dialog')?.classList.contains('is-open')) document.body.style.overflow = '';
+};
+
+let projectLastFocus = null;
+const renderProjectSection = (section) => `
+  <article class="project-dialog-section project-dialog-section-${escapeHtml(section.kind || 'plain')}">
+    ${section.image ? `<button class="project-detail-image-button" type="button" aria-label="放大查看${escapeHtml(section.title || '配图')}"><img class="project-detail-image" src="${escapeHtml(asset(section.image))}" alt="${escapeHtml(`${section.title || ''}${section.subtitle ? `：${section.subtitle}` : ''}`)}"><span>点击图片放大</span></button>` : ''}
+    <div class="project-dialog-section-copy">
+      ${section.eyebrow ? `<span class="project-section-eyebrow">${escapeHtml(section.eyebrow)}</span>` : ''}
+      <h3>${escapeHtml(section.title || '')}</h3>
+      ${section.subtitle ? `<strong>${escapeHtml(section.subtitle)}</strong>` : ''}
+      <p>${escapeHtml(section.text || '')}</p>
+    </div>
+  </article>`;
+const openProjectDialog = (project, trigger) => {
+  const dialog = document.querySelector('.project-dialog');
+  if (!dialog || !project) return;
+  projectLastFocus = trigger || document.activeElement;
+  dialog.querySelector('#project-dialog-title').textContent = project.name || '';
+  dialog.querySelector('.project-dialog-summary').textContent = project.description || '';
+  dialog.querySelector('.project-dialog-content').innerHTML = (project.sections || []).map(renderProjectSection).join('');
+  dialog.querySelector('.project-dialog-footer').innerHTML = project.url
+    ? `<a class="project-dialog-link" href="${escapeHtml(safeUrl(project.url))}">${escapeHtml(project.linkLabel || '了解更多')} ${svg('arrow')}</a>`
+    : '';
+  dialog.querySelector('.project-dialog-content').scrollTop = 0;
+  dialog.classList.add('is-open');
+  dialog.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  dialog.querySelector('.project-dialog-close').focus();
+};
+const closeProjectDialog = () => {
+  const dialog = document.querySelector('.project-dialog');
+  if (!dialog || !dialog.classList.contains('is-open')) return;
+  dialog.classList.remove('is-open');
+  dialog.setAttribute('aria-hidden', 'true');
+  if (!document.querySelector('.reader')?.classList.contains('is-open') && !lightboxIsOpen()) document.body.style.overflow = '';
+  if (projectLastFocus?.isConnected) projectLastFocus.focus();
 };
 
 /* ============================================================
@@ -1058,6 +1095,18 @@ const renderShell = (page, activePath) => {
     </figure>
   </div>
 
+  <div class="project-dialog" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="project-dialog-title">
+    <button class="project-dialog-backdrop" type="button" aria-label="关闭详情"></button>
+    <section class="project-dialog-panel">
+      <header class="project-dialog-header">
+        <div><span class="project-dialog-kicker">CURRENT JOURNEY / 当前计划</span><h2 id="project-dialog-title"></h2><p class="project-dialog-summary"></p></div>
+        <button class="project-dialog-close" type="button" aria-label="关闭详情">${svg('close')}</button>
+      </header>
+      <div class="project-dialog-content"></div>
+      <footer class="project-dialog-footer"></footer>
+    </section>
+  </div>
+
   <button class="back-top" type="button" aria-label="返回顶部">${svg('arrowUp')}</button>`;
 };
 
@@ -1210,25 +1259,29 @@ const pageProjects = () => `
     <div class="section-heading"><span class="section-number">PROJECTS / 正在进行</span><h2 id="projects-title">项目</h2></div>
     <div class="section-body">
       ${site.projects.length ? `<div class="project-grid ${site.projects.some(p => p.sections && p.sections.length) ? 'project-grid-featured' : ''}">
-        ${site.projects.map((p) => `<article class="project-card ${p.sections && p.sections.length ? 'project-showcase' : ''}">
+        ${site.projects.map((p, index) => p.sections && p.sections.length ? `<article class="project-card project-showcase project-launch-card">
           <div class="project-card-top">
             <div class="project-icon">${svg(p.icon)}</div>
             ${p.year ? `<span class="project-year">${escapeHtml(p.year)}</span>` : ''}
           </div>
           <h3>${escapeHtml(p.name)}</h3>
           <p class="project-desc">${escapeHtml(p.description)}</p>
-          ${p.sections && p.sections.length ? `<div class="project-section-grid">
-            ${p.sections.map(section => `<section class="project-section-card project-section-${escapeHtml(section.kind || 'plain')}">
-              ${section.image ? `<img class="project-section-image" src="${escapeHtml(asset(section.image))}" alt="${escapeHtml(`${section.title}${section.subtitle ? `：${section.subtitle}` : ''}`)}" />` : ''}
-              <div class="project-section-shade"></div>
-              <div class="project-section-content">
-                <span class="project-section-eyebrow">${escapeHtml(section.eyebrow || '')}</span>
-                <h4>${escapeHtml(section.title || '')}</h4>
-                ${section.subtitle ? `<strong>${escapeHtml(section.subtitle)}</strong>` : ''}
-                <p>${escapeHtml(section.text || '')}</p>
-              </div>
-            </section>`).join('')}
-          </div>` : `<p class="project-detail">${escapeHtml(p.detail)}</p>`}
+          <button class="project-card-preview" type="button" data-project-index="${index}" aria-haspopup="dialog" aria-label="打开${escapeHtml(p.name)}详细内容">
+            ${p.sections.find(section => section.image)?.image ? `<img src="${escapeHtml(asset(p.sections.find(section => section.image).image))}" alt="${escapeHtml(p.sections.find(section => section.image).title || p.name)}" />` : ''}
+            <span class="project-preview-label">学习计划 · 持续更新</span>
+            <strong>${p.sections.map(section => escapeHtml(section.title || '')).filter(Boolean).join('　·　')}</strong>
+            <span class="project-preview-hint">点击查看完整内容 ${svg('arrow')}</span>
+          </button>
+          <div class="project-meta">${(p.tags || []).map(t => `<span>#${escapeHtml(t)}</span>`).join('')}</div>
+          <button class="project-open-button" type="button" data-project-index="${index}" aria-haspopup="dialog">展开查看 ${svg('arrow')}</button>
+        </article>` : `<article class="project-card">
+          <div class="project-card-top">
+            <div class="project-icon">${svg(p.icon)}</div>
+            ${p.year ? `<span class="project-year">${escapeHtml(p.year)}</span>` : ''}
+          </div>
+          <h3>${escapeHtml(p.name)}</h3>
+          <p class="project-desc">${escapeHtml(p.description)}</p>
+          <p class="project-detail">${escapeHtml(p.detail)}</p>
           <div class="project-meta">${(p.tags || []).map(t => `<span>#${escapeHtml(t)}</span>`).join('')}</div>
           ${p.url ? link(p, `${escapeHtml(p.linkLabel || '查看项目')} ${svg('arrow')}`, 'text-link') : ''}
         </article>`).join('')}
@@ -1442,6 +1495,7 @@ function bindPosts() {
 }
 
 const render = () => {
+  if (document.querySelector('.project-dialog')?.classList.contains('is-open')) closeProjectDialog();
   const path = currentPath();
   const route = routes[path];
   document.querySelector('#app').innerHTML = renderShell(route ? route.render() : pageNotFound(path), path);
@@ -1484,6 +1538,18 @@ const bindGlobalUi = () => {
   });
   // 图片灯箱：点击任意处关闭
   document.querySelector('.lightbox').addEventListener('click', closeLightbox);
+  // 项目卡片详情：宽屏/窄屏共用同一详情视图
+  const projectDialog = document.querySelector('.project-dialog');
+  document.querySelectorAll('.project-open-button, .project-card-preview').forEach(button => {
+    button.addEventListener('click', () => openProjectDialog(site.projects[Number(button.dataset.projectIndex)], button));
+  });
+  projectDialog.querySelector('.project-dialog-close').addEventListener('click', closeProjectDialog);
+  projectDialog.querySelector('.project-dialog-backdrop').addEventListener('click', closeProjectDialog);
+  projectDialog.querySelector('.project-dialog-content').addEventListener('click', (e) => {
+    const button = e.target.closest('.project-detail-image-button');
+    const img = button?.querySelector('img');
+    if (img) openLightbox(img);
+  });
   // 移动端菜单
   const menuButton = document.querySelector('.menu-toggle');
   const menu = document.querySelector('.main-nav');
@@ -1529,6 +1595,7 @@ visitorBadge.append(visitorNum, ' 位访客');
 addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (lightboxIsOpen()) { closeLightbox(); return; }
+  if (document.querySelector('.project-dialog')?.classList.contains('is-open')) { closeProjectDialog(); return; }
   if (document.querySelector('.reader')?.classList.contains('is-open')) closeReader();
 });
 addEventListener('hashchange', render);

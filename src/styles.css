@@ -784,6 +784,36 @@ a.friend-card:hover .friend-link-icon { color: var(--accent); }
 .project-detail { font-size: 12.5px; color: var(--text-mute); line-height: 1.6; margin: 0 0 14px; }
 .project-showcase { width: 100%; }
 .project-showcase .project-desc { max-width: 680px; }
+.project-launch-card { align-items: stretch; }
+.project-card-preview {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 9px;
+  width: 100%;
+  min-height: 230px;
+  margin: 8px 0 2px;
+  padding: 22px 24px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: linear-gradient(145deg, #1a211c, #101411);
+  color: var(--text-bright);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+.project-card-preview::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(7,10,8,.78), rgba(7,10,8,.4) 65%, rgba(7,10,8,.22)), linear-gradient(0deg, rgba(7,10,8,.76), transparent 75%); }
+.project-card-preview > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 57%; transition: transform .5s ease; }
+.project-launch-card:hover .project-card-preview > img { transform: scale(1.035); }
+.project-preview-label { color: var(--accent); font: 10px var(--mono); letter-spacing: .14em; }
+.project-card-preview strong { font: 500 clamp(22px, 2.7vw, 30px)/1.3 var(--serif); }
+.project-preview-hint { display: inline-flex; align-items: center; gap: 7px; margin-top: 5px; color: rgba(244,247,243,.82); font-size: 13px; }
+.project-preview-hint svg { width: 15px; height: 15px; transition: transform .2s; }
+.project-launch-card:hover .project-preview-hint svg { transform: translateX(4px); }
 .project-section-grid { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 15px; margin: 12px 0 3px; }
 .project-section-card {
   position: relative;
@@ -808,6 +838,51 @@ a.friend-card:hover .friend-link-icon { color: var(--accent); }
 .project-section-passion .project-section-content p { color: var(--text-soft); }
 .project-card .project-meta { margin: auto 0 0; padding-top: 12px; border-top: 1px dashed var(--line); width: 100%; }
 .project-card .text-link { margin-top: 10px; }
+.project-open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 9px 13px;
+  border: 1px solid rgba(201,232,148,.35);
+  border-radius: 6px;
+  background: rgba(201,232,148,.07);
+  color: var(--accent);
+  font: 500 12px var(--mono);
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .2s;
+}
+.project-open-button:hover { border-color: var(--accent); background: rgba(201,232,148,.13); transform: translateY(-1px); }
+.project-open-button svg { width: 14px; height: 14px; }
+
+/* ---------- 项目详情卡片弹窗 ---------- */
+.project-dialog { position: fixed; inset: 0; z-index: 120; visibility: hidden; opacity: 0; transition: opacity .25s ease, visibility .25s; }
+.project-dialog.is-open { visibility: visible; opacity: 1; }
+.project-dialog-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(5,8,7,.84); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); cursor: pointer; }
+.project-dialog-panel { position: relative; display: flex; flex-direction: column; width: min(1080px, calc(100vw - 48px)); max-height: 90vh; margin: 5vh auto; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 14px; background: #121614; box-shadow: 0 34px 90px rgba(0,0,0,.58); transform: translateY(12px) scale(.99); transition: transform .25s ease; }
+.project-dialog.is-open .project-dialog-panel { transform: none; }
+.project-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding: 24px 28px 20px; border-bottom: 1px solid var(--line); }
+.project-dialog-kicker { color: var(--accent); font: 10px var(--mono); letter-spacing: .14em; }
+.project-dialog-header h2 { margin: 8px 0 6px; color: var(--text-bright); font: 500 27px/1.3 var(--serif); }
+.project-dialog-summary { max-width: 740px; margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.75; }
+.project-dialog-close { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; transition: color .2s, border-color .2s; }
+.project-dialog-close:hover { color: var(--accent); border-color: var(--accent); }
+.project-dialog-close svg { width: 16px; height: 16px; }
+.project-dialog-content { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); align-items: stretch; gap: 18px; overflow-y: auto; padding: 22px 26px 28px; overscroll-behavior: contain; }
+.project-dialog-section { overflow: hidden; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: radial-gradient(ellipse at 95% 0%, rgba(201,232,148,.08), transparent 42%), var(--panel-deep); }
+.project-detail-image-button { position: relative; display: block; width: 100%; height: clamp(220px, 29vw, 330px); padding: 0; overflow: hidden; border: 0; border-bottom: 1px solid var(--line); background: #0b0e0c; cursor: zoom-in; }
+.project-detail-image { display: block; width: 100%; height: 100%; object-fit: contain; transition: transform .3s ease; }
+.project-detail-image-button:hover .project-detail-image { transform: scale(1.025); }
+.project-detail-image-button > span { position: absolute; right: 12px; bottom: 12px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.18); border-radius: 4px; background: rgba(5,8,7,.72); color: #f2f4f1; font-size: 11px; }
+.project-dialog-section-copy { padding: 22px 24px 26px; }
+.project-dialog-section-copy h3 { margin: 10px 0 11px; color: var(--text-bright); font: 500 25px/1.3 var(--serif); }
+.project-dialog-section-copy strong { display: inline-flex; margin-bottom: 12px; padding: 6px 9px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text-bright); font-size: 12px; font-weight: 500; }
+.project-dialog-section-copy p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.95; }
+.project-dialog-footer { display: flex; justify-content: flex-end; padding: 0 26px 20px; }
+.project-dialog-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font: 12px var(--mono); text-decoration: none; }
+.project-dialog-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.project-dialog-link svg { width: 14px; height: 14px; }
 
 /* ---------- 成长时间线（关于页） ---------- */
 .timeline { position: relative; max-width: 760px; padding-left: 2px; }
@@ -1460,6 +1535,9 @@ a.friend-card:hover .friend-link-icon { color: var(--accent); }
 /* ---------- 响应式 ---------- */
 @media (max-width: 900px) {
   .wrap { padding-inline: 32px; }
+  .project-dialog-panel { width: calc(100vw - 32px); max-height: 94vh; margin: 3vh auto; }
+  .project-dialog-content { gap: 13px; padding: 16px; }
+  .project-dialog-section-copy { padding: 18px; }
   .about-story { grid-template-columns: minmax(190px, .7fr) minmax(0, 1.3fr); gap: 22px; }
   .about-journey-card { min-height: 390px; padding-inline: 18px; }
   .about-chapter { grid-template-columns: 34px minmax(0,1fr); gap: 11px; }
@@ -1596,9 +1674,20 @@ a.friend-card:hover .friend-link-icon { color: var(--accent); }
   .project-grid { grid-template-columns: 1fr; gap: 16px; }
   .project-section-grid { grid-template-columns: 1fr; gap: 12px; }
   .project-card { padding: 18px 16px; }
+  .project-card-preview { min-height: 190px; padding: 18px; }
   .project-section-card, .project-section-goal { min-height: 265px; }
   .project-section-content { padding: 18px; }
   .project-section-content h4 { margin-top: 15px; font-size: 21px; }
+  .project-dialog-panel { width: calc(100vw - 18px); max-height: 96vh; margin: 2vh auto; border-radius: 11px; }
+  .project-dialog-header { padding: 17px 16px 14px; gap: 12px; }
+  .project-dialog-header h2 { font-size: 22px; }
+  .project-dialog-summary { font-size: 13px; }
+  .project-dialog-content { grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+  .project-detail-image-button { height: 210px; }
+  .project-dialog-section-copy { padding: 17px; }
+  .project-dialog-section-copy h3 { font-size: 22px; }
+  .project-dialog-section-copy p { font-size: 13.5px; }
+  .project-dialog-footer { padding: 0 14px 16px; }
   .timeline::before { left: 15px; }
   .timeline-item { grid-template-columns: 1fr; gap: 8px; padding-left: 34px; padding-bottom: 20px; }
   .timeline-year { text-align: left; padding-top: 0; }
